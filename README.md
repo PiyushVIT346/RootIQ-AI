@@ -26,6 +26,8 @@
 
 Traditional incident investigation often requires engineers to manually examine logs, incident reports, troubleshooting guides, postmortems, and operational documentation. This process can be time-consuming and makes it difficult to connect historical incidents with current system failures.
 
+![RootIQ AI Dashboard](https://github.com/PiyushVIT346/RootIQ-AI/blob/main/dashboard.jpeg)
+
 RootIQ AI addresses this problem through an agentic RAG architecture that combines:
 
 - Multi-agent orchestration using LangGraph.
@@ -36,6 +38,11 @@ RootIQ AI addresses this problem through an agentic RAG architecture that combin
 - LLM-powered root cause analysis through MeshAPI.
 - Evidence verification and corrective retrieval.
 - Quantitative RAG evaluation using RAGAS.
+
+<p align="center">
+  <img src="investigation.png" width="48%" />
+  <img src="Evidence Dashboard.png" width="48%" />
+</p>
 
 The platform allows users to upload multiple operational documents and ask natural-language questions about incidents, dependencies, failures, and recovery procedures.
 
@@ -71,6 +78,10 @@ RootIQ AI addresses these challenges through an evidence-driven, multi-stage RAG
 | RAGAS evaluation | Measure faithfulness, answer relevancy, context precision, and context recall |
 | Retrieval benchmarking | Compare four different retrieval configurations |
 | Interactive dashboard | Upload documents, investigate incidents, and inspect agent execution |
+
+![Ragas Evaluation](https://github.com/PiyushVIT346/RootIQ-AI/blob/main/ragas.jpeg)
+
+
 
 ## 4. System Architecture
 
