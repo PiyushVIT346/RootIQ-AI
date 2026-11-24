@@ -1,0 +1,10 @@
+2026-10-14T10:08:11Z INFO payment-api request_id=p771 start
+2026-10-14T10:08:12Z WARN payment-api pool_wait_ms=840 active=78 max=80
+2026-10-14T10:08:13Z ERROR payment-api connection acquisition timeout
+2026-10-14T10:08:14Z WARN payment-api retry_attempts=6
+2026-10-14T10:11:02Z WARN payment-api p95_latency_ms=2800
+2026-10-14T10:16:44Z ERROR pg-primary-01 active_connections=480 max_connections=500
+2026-10-14T10:19:03Z INFO db-ops payment_api_sessions=312
+2026-10-14T10:24:18Z INFO payment-api retry_attempts_changed=2
+2026-10-14T10:33:05Z INFO pg-primary-01 active_connections=244
+2026-10-14T10:36:21Z INFO payment-api p95_latency_ms=360

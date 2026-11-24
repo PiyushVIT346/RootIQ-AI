@@ -1,0 +1,2 @@
+invalid type: string "# INC-1005: Inventory Cache Stampede\n\nDate: 2026-10-25\nSeverity: SEV-2\nStatus: Resolved\nService: inventory-service\nInfrastructure: redis-cache-01, pg-primary-01\n\n## Description\nInventory API latency increased after popular Redis\ncache keys expired simultaneously.\n\n## Impact\nInventory lookup p95 latency increased from 90ms to 1600ms.\nrrency.
+ planÿj]ÿÿÿÿÿÿÿÿÿÿÿÿ

@@ -1,0 +1,8 @@
+2026-10-21T14:03:00Z WARN kafka-orders consumer_lag=42000
+2026-10-21T14:08:12Z WARN order-service batch_size=1000 duration_ms=78000
+2026-10-21T14:10:03Z ERROR order-service statement timeout
+2026-10-21T14:14:29Z WARN kafka-orders group_rebalance_count=17
+2026-10-21T14:18:44Z WARN pg-primary-01 write_latency_ms=1400
+2026-10-21T14:29:01Z INFO order-service batch_size_changed=200
+2026-10-21T14:42:15Z INFO order-service consumer_replicas=8
+2026-10-21T15:11:00Z INFO kafka-orders consumer_lag=4300

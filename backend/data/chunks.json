@@ -1,0 +1,262 @@
+[
+  {
+    "id": "authentication.log:19b0b1311d902345:0",
+    "text": "2026-10-18T08:04:01Z ERROR ingress-gateway certificate has expired\n2026-10-18T08:05:22Z WARN auth-service login_failure_rate=0.14\n2026-10-18T08:12:07Z INFO identity-oncall certificate_expired=true\n2026-10-18T08:19:43Z INFO ingress-gateway certificate_renewed=true\n2026-10-18T08:22:10Z INFO tls_probe chain_valid=true\n2026-10-18T08:26:00Z INFO auth-service login_success_rate=0.997",
+    "metadata": {
+      "source": "authentication.log",
+      "chunk_id": "authentication.log:19b0b1311d902345:0",
+      "chunk_index": 0,
+      "file_hash": "19b0b1311d9023453846c29cb00fe9544a8ed0478906d36bf0f50fb9036799cd"
+    }
+  },
+  {
+    "id": "cerificates.md:61f2dfa98d37dcfd:0",
+    "text": "# TLS Certificate Troubleshooting\n\nSymptoms:\n- TLS handshake failure.\n- Certificate has expired.\n- Authentication failures.\n\nInvestigation:\n1. Inspect certificate expiration.\n2. Verify certificate subject and issuer.\n3. Validate full certificate chain.\n4. Check gateway replicas.\n5. Verify hostname.\n\nResolution:\nRenew certificate through approved certificate authority.\nDeploy using staged rollout.\nVerify external TLS connectivity.\n\nPrevention:\nAutomated renewal and expiry alerts.",
+    "metadata": {
+      "source": "cerificates.md",
+      "chunk_id": "cerificates.md:61f2dfa98d37dcfd:0",
+      "chunk_index": 0,
+      "file_hash": "61f2dfa98d37dcfd31d14b8d99c29fe8be472f83d2b38e6fafcc3ec85924d94f"
+    }
+  },
+  {
+    "id": "database.md:a6722164b9e3d36a:0",
+    "text": "# PostgreSQL Connection Exhaustion Troubleshooting\n\nSymptoms:\n- Too many clients already.\n- Connection acquisition timeout.\n- High database active sessions.\n- Increased payment API latency.\n\nInvestigation:\n1. Check PostgreSQL active connections.\n2. Group sessions by application name.\n3. Inspect application connection pool usage.\n4. Check retry attempts and worker concurrency.\n5. Review recent deployments.\n\nMitigation:\n1. Notify Database Operations.\n2. Reduce excessive retries.\n3. Apply exponential backoff with jitter.\n4. Reduce application concurrency if required.\n5. Monitor database connection count.\n\nNever terminate all database sessions blindly.\nDo not increase max_connections without capacity review.\n\nRecovery:\n- Active connections return below service budget.\n- Payment API p95 latency below 400ms.\n- Checkout 5xx rate below 1%.",
+    "metadata": {
+      "source": "database.md",
+      "chunk_id": "database.md:a6722164b9e3d36a:0",
+      "chunk_index": 0,
+      "file_hash": "a6722164b9e3d36a6d8b4c1fed0b464a8f86f1c6e7330f220b94d6222b279800"
+    }
+  },
+  {
+    "id": "INC-1001.md:7ff875aa5a332b50:0",
+    "text": "# INC-1001: Checkout API Failure\n\nDate: 2026-10-14\nSeverity: SEV-1\nStatus: Resolved\nService: checkout-api\nRelated Services: payment-api, pg-primary-01\n\n## Description\nCheckout API returned HTTP 503 errors because payment processing\nrequests were taking too long.\n\n## Impact\n- 2,840 checkout attempts failed or timed out.\n- Checkout success rate decreased from 99.7% to 61.2%.\n- Incident duration: 39 minutes.\n\n## Timeline\n10:02 UTC - Checkout 5xx alert triggered.\n10:05 UTC - Platform SRE acknowledged.\n10:11 UTC - Payment API latency reached 2.8 seconds.\n10:16 UTC - Database connections reached 480/500.\n10:24 UTC - Payment concurrency reduced.\n10:33 UTC - Database connections decreased.\n10:41 UTC - Service recovered.\n\n## Evidence\n- PostgreSQL connection saturation.\n- Payment API connection acquisition timeout.\n- Increased retry attempts.\n- Elevated checkout response time.",
+    "metadata": {
+      "source": "INC-1001.md",
+      "chunk_id": "INC-1001.md:7ff875aa5a332b50:0",
+      "chunk_index": 0,
+      "file_hash": "7ff875aa5a332b502d13172e3794dea78fc438c0c53620f478b6a321ecb8fe32"
+    }
+  },
+  {
+    "id": "INC-1001.md:7ff875aa5a332b50:1",
+    "text": "## Root Cause\nAggressive payment API retries and excessive connection\npool concurrency exhausted PostgreSQL connections.\n\n## Resolution\nReduced worker concurrency, capped database connections,\nand reduced retry attempts.\n\n## Prevention\n- Implement exponential backoff.\n- Configure service-level connection budgets.\n- Monitor database pool wait time.\n- Perform retry load testing.\n\nRelated Incident: INC-1002\nRelated Postmortem: PM-1001",
+    "metadata": {
+      "source": "INC-1001.md",
+      "chunk_id": "INC-1001.md:7ff875aa5a332b50:1",
+      "chunk_index": 1,
+      "file_hash": "7ff875aa5a332b502d13172e3794dea78fc438c0c53620f478b6a321ecb8fe32"
+    }
+  },
+  {
+    "id": "INC-1002.md:d23ef83ff8fd5350:0",
+    "text": "# INC-1002: Payment API Latency\n\nDate: 2026-10-14\nSeverity: SEV-2\nStatus: Resolved\nService: payment-api\nInfrastructure: pg-primary-01\n\n## Description\nPayment API p95 latency increased from 240ms to 2800ms.\n\n## Evidence\n- Connection acquisition time reached 1.9 seconds.\n- PostgreSQL connections reached 480/500.\n- Retry count increased 6.4 times.\n- Checkout API began returning HTTP 503.\n\n## Root Cause\nDatabase connection pool saturation caused by\naggressive application retries.\n\n## Resolution\nReduced concurrency and retry attempts.\n\n## Relationship\nThis incident is linked to INC-1001.\nBoth incidents represent different symptoms of\nthe same database connection exhaustion event.\n\nRelated Postmortem: PM-1001",
+    "metadata": {
+      "source": "INC-1002.md",
+      "chunk_id": "INC-1002.md:d23ef83ff8fd5350:0",
+      "chunk_index": 0,
+      "file_hash": "d23ef83ff8fd535084fb21b99e721fb68dfb3e0f8857a52de3f4b19f26acc481"
+    }
+  },
+  {
+    "id": "INC-1003.md:2f976e731a26e3a8:0",
+    "text": "# INC-1003: Authentication Certificate Expiry\n\nDate: 2026-10-18\nSeverity: SEV-1\nStatus: Resolved\nService: auth-service\nInfrastructure: ingress-gateway\n\n## Description\nUsers experienced authentication failures because\nthe TLS certificate had expired.\n\n## Impact\nLogin success rate decreased to 72% for 26 minutes.\n\n## Evidence\n- Gateway logs showed certificate expired.\n- Certificate expiration date was 2026-10-18.\n- No automated expiry alert existed.\n\n## Root Cause\nCertificate renewal was manual and the assigned\nowner was inactive.\n\n## Resolution\nRenewed and deployed the certificate.\nValidated the certificate chain.\n\n## Prevention\n- Automated certificate renewal.\n- Alerts at 30, 14, and 7 days.\n- Primary and backup certificate owners.\n\nRelated Postmortem: PM-1002",
+    "metadata": {
+      "source": "INC-1003.md",
+      "chunk_id": "INC-1003.md:2f976e731a26e3a8:0",
+      "chunk_index": 0,
+      "file_hash": "2f976e731a26e3a864a0cfea8e698ee4063dd24694c0a5bd5792802203243f69"
+    }
+  },
+  {
+    "id": "INC-1004.md:b80c51dc391c2905:0",
+    "text": "# INC-1004: Kafka Order Queue Backlog\n\nDate: 2026-10-21\nSeverity: SEV-2\nStatus: Resolved\nService: order-service\nInfrastructure: kafka-orders, pg-primary-01\n\n## Description\nKafka consumer lag increased to 185000 messages.\n\nOrder status updates were delayed by up to 17 minutes.\n\n## Evidence\n- Consumer throughput decreased from 4200 to 900 messages/min.\n- Database write latency reached 1.4 seconds.\n- Transaction timeouts occurred.\n- Consumer group rebalances increased.\n\n## Root Cause\nLarge batch processing increased transaction duration.\nDatabase contention caused transaction timeouts and\nrepeated Kafka consumer rebalances.\n\n## Resolution\n- Reduced batch size from 1000 to 200.\n- Increased consumer replicas from 4 to 8.\n- Monitored queue lag until recovery.\n\n## Prevention\n- Alert on consumer rebalance rate.\n- Monitor database write latency.\n- Load test consumer scaling.",
+    "metadata": {
+      "source": "INC-1004.md",
+      "chunk_id": "INC-1004.md:b80c51dc391c2905:0",
+      "chunk_index": 0,
+      "file_hash": "b80c51dc391c29054617b2c15e1aa16ce6df8a8d975531b68bd966c30619d796"
+    }
+  },
+  {
+    "id": "INC-1004.md:b80c51dc391c2905:1",
+    "text": "## Prevention\n- Alert on consumer rebalance rate.\n- Monitor database write latency.\n- Load test consumer scaling.\n\nRelated Postmortem: PM-1003",
+    "metadata": {
+      "source": "INC-1004.md",
+      "chunk_id": "INC-1004.md:b80c51dc391c2905:1",
+      "chunk_index": 1,
+      "file_hash": "b80c51dc391c29054617b2c15e1aa16ce6df8a8d975531b68bd966c30619d796"
+    }
+  },
+  {
+    "id": "INC-1005.md:b5253aaf24517b02:0",
+    "text": "# INC-1005: Inventory Cache Stampede\n\nDate: 2026-10-25\nSeverity: SEV-2\nStatus: Resolved\nService: inventory-service\nInfrastructure: redis-cache-01, pg-primary-01\n\n## Description\nInventory API latency increased after popular Redis\ncache keys expired simultaneously.\n\n## Impact\nInventory lookup p95 latency increased from 90ms to 1600ms.\nCheckout conversion dropped by 18% for 19 minutes.\n\n## Evidence\n- Redis hit ratio dropped from 96% to 21%.\n- PostgreSQL read QPS increased 5.1 times.\n- Repeated cache misses occurred.\n\n## Root Cause\nSynchronized cache expiration created a cache stampede.\n\n## Resolution\nWarmed frequently requested keys and enabled request locking.\n\n## Prevention\n- Add TTL jitter.\n- Implement request coalescing.\n- Add cache hit-ratio alerts.\n- Implement stale-while-revalidate where appropriate.\n\nRelated Postmortem: PM-1004",
+    "metadata": {
+      "source": "INC-1005.md",
+      "chunk_id": "INC-1005.md:b5253aaf24517b02:0",
+      "chunk_index": 0,
+      "file_hash": "b5253aaf24517b0253c3f8555f652bd1000078b16df4f889d19e97aff491bc45"
+    }
+  },
+  {
+    "id": "INC-1006.md:98f7286de3a2be42:0",
+    "text": "# INC-1006: Payment API Memory Leak\n\nDate: 2026-10-28\nSeverity: SEV-2\nStatus: Resolved\nService: payment-api\n\n## Description\nPayment API memory usage increased continuously after\ndeployment pay-2026.10.28.3.\n\n## Evidence\n- Memory increased from 420MB to 1.9GB.\n- Application instances restarted.\n- Database connections remained normal.\n- Heap profile showed retained response objects.\n\n## Root Cause\nA newly deployed metrics middleware retained request\nand response objects in an unbounded global map.\n\n## Resolution\nRolled back the deployment and disabled the middleware.\n\n## Prevention\n- Memory soak tests.\n- Bounded cache implementation.\n- Middleware lifecycle review.\n- Memory growth-rate alerts.\n\nRelated Postmortem: PM-1005\n\nImportant:\nThis incident has a different root cause from INC-1002,\neven though both involve payment-api.",
+    "metadata": {
+      "source": "INC-1006.md",
+      "chunk_id": "INC-1006.md:98f7286de3a2be42:0",
+      "chunk_index": 0,
+      "file_hash": "98f7286de3a2be423a29a321377b853a0155b3d0592e00b6da58a28a9b33bb96"
+    }
+  },
+  {
+    "id": "INC-1007.md:7f0e9f804ed4e678:0",
+    "text": "# INC-1007: PostgreSQL Disk Pressure\n\nDate: 2026-11-02\nSeverity: SEV-1\nStatus: Resolved\nInfrastructure: pg-primary-01\n\n## Description\nDatabase disk utilization reached 97%, causing\nwrite failures and increased query latency.\n\n## Evidence\n- WAL archive backlog increased.\n- Temporary table size increased significantly.\n- Free disk space fell below 8GB.\n\n## Root Cause\nA maintenance query created large intermediate\ntemporary tables without execution safeguards.\nWAL cleanup was delayed by an archive destination issue.\n\n## Resolution\nStopped the maintenance job, restored WAL archival,\nand removed validated temporary artifacts.\n\n## Prevention\n- Disk growth alerts.\n- Query resource limits.\n- WAL archive monitoring.\n- Maintenance job dry runs.",
+    "metadata": {
+      "source": "INC-1007.md",
+      "chunk_id": "INC-1007.md:7f0e9f804ed4e678:0",
+      "chunk_index": 0,
+      "file_hash": "7f0e9f804ed4e678d19ab7b6ed1ab482d1e24cc6c221f16d9410a5c36764856b"
+    }
+  },
+  {
+    "id": "INC-1008.md:e5cf4d8604e7bbd4:0",
+    "text": "# INC-1008: Ingress Routing Regression\n\nDate: 2026-11-06\nSeverity: SEV-1\nStatus: Resolved\nInfrastructure: ingress-gateway\nServices: checkout-api, auth-service\n\n## Description\nA gateway configuration rollout caused HTTP 404\nand 502 responses for some API requests.\n\n## Evidence\nGateway logs showed requests being routed to\nan outdated backend pool.\n\n## Root Cause\nA route matcher precedence change shadowed the\nintended /api/v2 routing rule.\n\n## Resolution\nRolled back gateway configuration and validated\nrouting using smoke tests.\n\n## Prevention\n- Configuration review.\n- Staged rollout.\n- Route-level synthetic tests.\n- Automatic rollback on increased 5xx errors.",
+    "metadata": {
+      "source": "INC-1008.md",
+      "chunk_id": "INC-1008.md:e5cf4d8604e7bbd4:0",
+      "chunk_index": 0,
+      "file_hash": "e5cf4d8604e7bbd4a2a2fa7498c6377bab304c890d2eedfe4bb5052be40c983b"
+    }
+  },
+  {
+    "id": "kafka.md:bafbd5e1d6663819:0",
+    "text": "# Kafka Consumer Lag Troubleshooting\n\nSymptoms:\n- Increasing consumer lag.\n- Delayed order status updates.\n- Repeated consumer rebalances.\n- Transaction timeouts.\n\nInvestigation:\n1. Check lag by partition.\n2. Compare producer and consumer throughput.\n3. Inspect processing duration.\n4. Check PostgreSQL write latency.\n5. Review consumer batch size.\n\nMitigation:\nReduce batch size if transactions take too long.\nScale consumers only after verifying database capacity.\n\nRecovery:\nConsumer lag below 5000 and decreasing.\nNo repeated rebalances.\nOrder status delay below 2 minutes.",
+    "metadata": {
+      "source": "kafka.md",
+      "chunk_id": "kafka.md:bafbd5e1d6663819:0",
+      "chunk_index": 0,
+      "file_hash": "bafbd5e1d6663819b6c52699cb987074ef98b37494816a376d126847efccd9fd"
+    }
+  },
+  {
+    "id": "memory.md:0627e05c590e6f83:0",
+    "text": "# Application Memory Leak Troubleshooting\n\nSymptoms:\n- Memory continuously increases.\n- Application instances restart.\n- OOM events.\n- Heap profiles show retained objects.\n\nInvestigation:\n1. Compare memory before and after deployment.\n2. Inspect recent code changes.\n3. Generate and inspect heap profiles.\n4. Check global maps and caches.\n5. Inspect middleware object lifecycle.\n\nMitigation:\nRollback a suspected faulty release following approval.\nPreserve logs and heap profiles.\n\nPrevention:\nMemory soak testing and bounded caches.",
+    "metadata": {
+      "source": "memory.md",
+      "chunk_id": "memory.md:0627e05c590e6f83:0",
+      "chunk_index": 0,
+      "file_hash": "0627e05c590e6f833a8766b79d755c5dca229c73da1ef3699a30fb6b487ed2c9"
+    }
+  },
+  {
+    "id": "order_service.log:8c17ce752d6cc88b:0",
+    "text": "2026-10-21T14:03:00Z WARN kafka-orders consumer_lag=42000\n2026-10-21T14:08:12Z WARN order-service batch_size=1000 duration_ms=78000\n2026-10-21T14:10:03Z ERROR order-service statement timeout\n2026-10-21T14:14:29Z WARN kafka-orders group_rebalance_count=17\n2026-10-21T14:18:44Z WARN pg-primary-01 write_latency_ms=1400\n2026-10-21T14:29:01Z INFO order-service batch_size_changed=200\n2026-10-21T14:42:15Z INFO order-service consumer_replicas=8\n2026-10-21T15:11:00Z INFO kafka-orders consumer_lag=4300",
+    "metadata": {
+      "source": "order_service.log",
+      "chunk_id": "order_service.log:8c17ce752d6cc88b:0",
+      "chunk_index": 0,
+      "file_hash": "8c17ce752d6cc88b47e1d5ff4f1c5e9d8937b61c39250a1fbfe6541a7026d425"
+    }
+  },
+  {
+    "id": "payment.log:c13b5dcdec3481f3:0",
+    "text": "2026-10-14T10:08:11Z INFO payment-api request_id=p771 start\n2026-10-14T10:08:12Z WARN payment-api pool_wait_ms=840 active=78 max=80\n2026-10-14T10:08:13Z ERROR payment-api connection acquisition timeout\n2026-10-14T10:08:14Z WARN payment-api retry_attempts=6\n2026-10-14T10:11:02Z WARN payment-api p95_latency_ms=2800\n2026-10-14T10:16:44Z ERROR pg-primary-01 active_connections=480 max_connections=500\n2026-10-14T10:19:03Z INFO db-ops payment_api_sessions=312\n2026-10-14T10:24:18Z INFO payment-api retry_attempts_changed=2\n2026-10-14T10:33:05Z INFO pg-primary-01 active_connections=244\n2026-10-14T10:36:21Z INFO payment-api p95_latency_ms=360",
+    "metadata": {
+      "source": "payment.log",
+      "chunk_id": "payment.log:c13b5dcdec3481f3:0",
+      "chunk_index": 0,
+      "file_hash": "c13b5dcdec3481f359eba5f166a71b1a6344dbd727fbc0e53b38ab00e90b616e"
+    }
+  },
+  {
+    "id": "PM-1001.md:a65def0dbb663d37:0",
+    "text": "# PM-1001: Database Connection Exhaustion\n\nRelated Incidents: INC-1001, INC-1002\nInfrastructure: pg-primary-01\n\n## Root Cause Chain\nTraffic increase\n    -> Payment API retry amplification\n    -> Increased concurrent database requests\n    -> Connection pool saturation\n    -> PostgreSQL connection exhaustion\n    -> Payment API latency\n    -> Checkout API HTTP 503\n\n## Contributing Factors\n- No service-level connection budgets.\n- No retry jitter.\n- Incomplete load testing.\n- Missing connection wait-time alerts.\n\n## Corrective Actions\nCompleted:\n- Payment API pool capped at 80.\n- Retry attempts reduced to 2.\n\nPlanned:\n- Database connection budgets.\n- Connection acquisition latency SLO.\n- Database saturation chaos testing.\n\n## Verification\nReplay test at 1.8x normal traffic kept\nactive database connections below 310.",
+    "metadata": {
+      "source": "PM-1001.md",
+      "chunk_id": "PM-1001.md:a65def0dbb663d37:0",
+      "chunk_index": 0,
+      "file_hash": "a65def0dbb663d373ca77afc1a2bb48e73749c6bc428392576fc10085f371c5b"
+    }
+  },
+  {
+    "id": "PM-1002.md:36cca0035cd78f76:0",
+    "text": "# PM-1002: TLS Certificate Lifecycle Failure\n\nRelated Incident: INC-1003\n\n## Root Cause\nCertificate renewal was manual.\nThe assigned owner was inactive.\nNo backup owner existed.\nNo certificate expiry alert existed.\n\n## Corrective Actions\n- Renewed certificate.\n- Assigned primary and backup owners.\n- Automated renewal planned.\n- Expiry alerts planned at 30, 14, and 7 days.\n- Monthly certificate audit planned.",
+    "metadata": {
+      "source": "PM-1002.md",
+      "chunk_id": "PM-1002.md:36cca0035cd78f76:0",
+      "chunk_index": 0,
+      "file_hash": "36cca0035cd78f76dfba41a483d51529b40575cf3c42ed7701735d2eb4747220"
+    }
+  },
+  {
+    "id": "PM-1003.md:4ef0a594a47c572f:0",
+    "text": "# PM-1003: Kafka Consumer Backlog\n\nRelated Incident: INC-1004\n\n## Root Cause\nOversized Kafka consumer batches increased transaction\nduration. Database contention caused transaction timeouts\nand repeated consumer group rebalances.\n\n## Corrective Actions\n- Batch size reduced to 200.\n- Consumer replicas increased to 8.\n- Rebalance alerts planned.\n- Database latency injection tests planned.\n\n## Operational Lesson\nScaling consumers alone is insufficient if the\ndatabase is the downstream bottleneck.",
+    "metadata": {
+      "source": "PM-1003.md",
+      "chunk_id": "PM-1003.md:4ef0a594a47c572f:0",
+      "chunk_index": 0,
+      "file_hash": "4ef0a594a47c572f192378cf0667ae6cf24837e91714e4f774c323a61f9582ed"
+    }
+  },
+  {
+    "id": "PM-1004.md:cb301c30f454d2d7:0",
+    "text": "# PM-1004: Inventory Cache Stampede\n\nRelated Incident: INC-1005\n\n## Root Cause\nPopular Redis cache keys expired at the same time.\nConcurrent requests overwhelmed the PostgreSQL read path.\n\n## Corrective Actions\n- Cache warming completed.\n- Request locking implemented.\n- TTL jitter planned.\n- Request coalescing planned.\n- Cache hit-ratio alert planned.",
+    "metadata": {
+      "source": "PM-1004.md",
+      "chunk_id": "PM-1004.md:cb301c30f454d2d7:0",
+      "chunk_index": 0,
+      "file_hash": "cb301c30f454d2d766ed6ef24e45bdd6ca29f545a8c1e33b1f599979ff435c6f"
+    }
+  },
+  {
+    "id": "PM-1005.md:cb73b5b915cbcfce:0",
+    "text": "# PM-1005: Payment API Memory Leak\n\nRelated Incident: INC-1006\n\n## Root Cause\nNew metrics middleware retained request and response\nobjects in an unbounded global map.\n\n## Important Distinction\nINC-1002 was caused by PostgreSQL connection exhaustion.\nINC-1006 was caused by application memory leakage.\n\n## Corrective Actions\n- Deployment rolled back.\n- Middleware disabled.\n- Memory soak testing planned.\n- Object lifecycle review planned.",
+    "metadata": {
+      "source": "PM-1005.md",
+      "chunk_id": "PM-1005.md:cb73b5b915cbcfce:0",
+      "chunk_index": 0,
+      "file_hash": "cb73b5b915cbcfcef08b73c5e44c9bf6b8d04357914736025af742769e4409d9"
+    }
+  },
+  {
+    "id": "redis.md:20810acca38410e9:0",
+    "text": "# Redis Cache Stampede Troubleshooting\n\nSymptoms:\n- Redis hit ratio suddenly decreases.\n- PostgreSQL read QPS increases.\n- Inventory lookup latency increases.\n\nInvestigation:\n1. Inspect key expiration patterns.\n2. Check TTL distribution.\n3. Inspect popular keys.\n4. Compare Redis misses with database reads.\n\nMitigation:\n- Warm frequently accessed keys.\n- Use request coalescing.\n- Apply TTL jitter.\n- Use stale-while-revalidate when business rules allow.",
+    "metadata": {
+      "source": "redis.md",
+      "chunk_id": "redis.md:20810acca38410e9:0",
+      "chunk_index": 0,
+      "file_hash": "20810acca38410e9f0f70f379c3bdfaca6252058f0f6918953e3d783a92053f0"
+    }
+  },
+  {
+    "id": "relationships.md:bac6a14c4b3a86b5:0",
+    "text": "# Knowledge Graph Relationships\n\ncheckout-api DEPENDS_ON payment-api\ncheckout-api DEPENDS_ON inventory-service\ncheckout-api DEPENDS_ON order-service\ncheckout-api DEPENDS_ON auth-service\n\npayment-api CONNECTS_TO pg-primary-01\norder-service CONNECTS_TO pg-primary-01\norder-service PUBLISHES_TO kafka-orders\ninventory-service USES redis-cache-01\ninventory-service CONNECTS_TO pg-primary-01\nauth-service ROUTED_THROUGH ingress-gateway\n\nINC-1001 AFFECTED checkout-api\nINC-1001 RELATED_TO INC-1002\nINC-1001 CAUSED_BY database_connection_exhaustion\n\nINC-1002 AFFECTED payment-api\nINC-1002 CAUSED_BY database_connection_exhaustion\n\nINC-1003 AFFECTED auth-service\nINC-1003 CAUSED_BY certificate_expiry\n\nINC-1004 AFFECTED order-service\nINC-1004 CAUSED_BY kafka_consumer_rebalance\n\nINC-1005 AFFECTED inventory-service\nINC-1005 CAUSED_BY cache_stampede",
+    "metadata": {
+      "source": "relationships.md",
+      "chunk_id": "relationships.md:bac6a14c4b3a86b5:0",
+      "chunk_index": 0,
+      "file_hash": "bac6a14c4b3a86b56dbae2953ec38444e3bbf20cb94f44d95165b5a277f00b0a"
+    }
+  },
+  {
+    "id": "relationships.md:bac6a14c4b3a86b5:1",
+    "text": "INC-1004 AFFECTED order-service\nINC-1004 CAUSED_BY kafka_consumer_rebalance\n\nINC-1005 AFFECTED inventory-service\nINC-1005 CAUSED_BY cache_stampede\n\nINC-1006 AFFECTED payment-api\nINC-1006 CAUSED_BY memory_leak\n\nINC-1007 AFFECTED pg-primary-01\nINC-1007 CAUSED_BY database_disk_pressure\n\nINC-1008 AFFECTED ingress-gateway\nINC-1008 CAUSED_BY route_configuration_regression",
+    "metadata": {
+      "source": "relationships.md",
+      "chunk_id": "relationships.md:bac6a14c4b3a86b5:1",
+      "chunk_index": 1,
+      "file_hash": "bac6a14c4b3a86b56dbae2953ec38444e3bbf20cb94f44d95165b5a277f00b0a"
+    }
+  },
+  {
+    "id": "services.md:d66b3164b72f9463:0",
+    "text": "# Enterprise Service Catalog\n\ncheckout-api:\nOwner: Commerce Platform\nDependencies: payment-api, inventory-service, order-service, auth-service\nCriticality: Tier 1\n\npayment-api:\nOwner: Payments Team\nDependencies: pg-primary-01\nCriticality: Tier 1\n\norder-service:\nOwner: Commerce Platform\nDependencies: kafka-orders, pg-primary-01\n\ninventory-service:\nOwner: Supply Systems\nDependencies: redis-cache-01, pg-primary-01\n\nauth-service:\nOwner: Identity Team\nDependencies: ingress-gateway\n\nInfrastructure:\npg-primary-01: PostgreSQL primary database\nredis-cache-01: Redis cache\nkafka-orders: Kafka order event cluster\ningress-gateway: API routing and TLS termination",
+    "metadata": {
+      "source": "services.md",
+      "chunk_id": "services.md:d66b3164b72f9463:0",
+      "chunk_index": 0,
+      "file_hash": "d66b3164b72f946353cdb6c76b9cfae1b6cad81153d4efd67504641b44217d70"
+    }
+  }
+]

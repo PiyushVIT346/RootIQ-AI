@@ -1,0 +1,6 @@
+2026-10-18T08:04:01Z ERROR ingress-gateway certificate has expired
+2026-10-18T08:05:22Z WARN auth-service login_failure_rate=0.14
+2026-10-18T08:12:07Z INFO identity-oncall certificate_expired=true
+2026-10-18T08:19:43Z INFO ingress-gateway certificate_renewed=true
+2026-10-18T08:22:10Z INFO tls_probe chain_valid=true
+2026-10-18T08:26:00Z INFO auth-service login_success_rate=0.997
